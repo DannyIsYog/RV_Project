@@ -103,7 +103,6 @@ def movement_control(node, start_flag, coordinates, obd_2_interface, movement_co
             print('ERROR: movement control -> invalid status')
 
         set_vehicle_info(obd_2_interface, speed, direction, status)
-        print("aaaaaahhhhhhhhhhhhhhhh")
         position_update(coordinates, obd_2_interface, TIME_INTERVAL)
         time.sleep(TIME_INTERVAL)
     return

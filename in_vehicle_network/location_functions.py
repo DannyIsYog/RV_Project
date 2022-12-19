@@ -27,17 +27,17 @@ def position_update(coordinates, obd_2_interface, time_interval):
     y = coordinates['y']
 
     if (((heading == 'E') and (direction == 'f')) or ((heading == 'O') and (direction == 'b'))):
-        x = coordinates['x'] + distancesFront[index] * time_interval * 10
+        x = coordinates['x'] + distancesFront[index]
         y = coordinates['y']
     elif (((heading == 'E') and (direction == 'b')) or ((heading == 'O') and (direction == 'f'))):
-        x = coordinates['x'] - distancesFront[index] * time_interval * 10
+        x = coordinates['x'] - distancesFront[index]
         y = coordinates['y']
     elif (((heading == 'N') and (direction == 'f')) or ((heading == 'S') and (direction == 'b'))):
         x = coordinates['x']
-        y = coordinates['y'] + distancesFront[index] * time_interval * 10
+        y = coordinates['y'] + distancesFront[index]
     elif (((heading == 'N') and (direction == 'b')) or ((heading == 'S') and (direction == 'f'))):
         x = coordinates['x']
-        y = coordinates['y'] - distancesFront[index] * time_interval * 10
+        y = coordinates['y'] - distancesFront[index]
     #print ('STATUS: current coordinates (after update):', x, y)
 
     t = time.time()
