@@ -15,6 +15,10 @@ from in_vehicle_network.location_functions import position_read
 # constants
 warm_up_time = 10
 
+obu_info = dict() # (name, max_capacity, free)
+au_info = dict() # (name, destination, number of passengers)
+rsu_info = dict() # (id, obu_list)
+
 #-----------------------------------------------------------------------------------------
 # Thread: application transmission. In this example user triggers CA and DEN messages. 
 #		CA message generation requires the sender identification and the inter-generation time.
@@ -81,14 +85,15 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 #               change the thread structure by adding the den_service_txd_queue so that this thread can send th DEN message. 
 # 				Do not forget to this also at IST_core.py
 #-----------------------------------------------------------------------------------------
-def my_system(node, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue):
+def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue):
+
 
 	safety_emergency_distance = 20
 	safety_warning_distance = 50
 
 	while not start_flag.isSet():
 		time.sleep (1)
-	print('STATUS: Ready to start - THREAD: my_system - NODE: {}'.format(node),'\n')
+	print('STATUS: Ready to start - THREAD: my_system - NODE: {}'.format(node),'\n')	
 
 	enter_car(movement_control_txd_queue)
 	turn_on_car(movement_control_txd_queue)
@@ -112,3 +117,22 @@ def my_system(node, start_flag, coordinates, obd_2_interface, my_system_rxd_queu
 #			print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
 
 	return
+
+
+def update_obu_info(name, capacity, free):
+	global obu_info 
+	obu_info = {'name': name, 'max_capacity': capacity, 'free': free}
+	return
+
+
+def update_au_info(name, destination, num_passengers):
+	global au_info 
+	au_info = {'name': name, 'destination': destination, 'num_passengers': num_passengers}
+	return
+
+
+def update_rsu_info(id, obu_list):
+	global rsu_info 
+	obu_info = {'id': id, 'obu_list': obu_list}
+	return
+

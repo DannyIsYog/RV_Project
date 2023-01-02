@@ -52,11 +52,13 @@ start_flag=Event()
 coordinates = dict()
 obd_2_interface = dict()
 
+
 # INPUT ARGUMENTS
 # node_id
+# node_type
 # node's coordinates - x, y
 # car speed - speed
-# car direction - backward (´b') or forward('f') ou ponto morto('ponto morto') ################################
+# car direction - backward (´b') or forward('f') ou ponto morto('none') ################################
 # car heading - heading (N or S or E or O)
 # test type - type of debug messages that are usefull for your test - 
 ##################################################
@@ -75,6 +77,23 @@ def main(argv):
 		coordinates = {'x':int(argv[3]), 'y':int(argv[4]), 't': repr(time.time())}
 		obd_2_interface = {'speed': int(argv[5]), 'direction': argv[6], 'heading': argv[7], 'status': "0", 'time': repr(time.time())}
 		print ('STATUS: node_id: ', node_id, 'coordinates: ', coordinates, '\nobd_2_interface: ', obd_2_interface)
+
+		###########	
+		if node_type == "OBU":
+			name = input ("Input vehicle's name >   ")
+			max_capacity = input ("Input vehicle's maximum capacity > ")
+			update_obu_info(name, max_capacity, max_capacity)
+		if node_type == "AU":
+			aux_name = input ("Input passenger's name >   ")
+			destination = input ("Input destination >   ")
+			num_passengers = input ("Input number of passengers >    ")
+			update_au_info(aux_name, destination, num_passengers)
+		if node_type == "RSU":
+			id = input ("Input RSU identfication >   ")
+			obu_list = []
+			update_rsu_info(id, obu_list)
+		###########	
+
 	threads=[]
 
 	try:
@@ -111,7 +130,7 @@ def main(argv):
 		# Thread - my_system: business logic 
 		# Arguments - my_system_rxd_queue: queue to receive data from other application layer threads relevant for business logic decision-process 
 		#           - movement_control_txd_queue: queue to send commands to control vehicles movement
-		t=Thread(target=my_system, args=(node_id, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue,))
+		t=Thread(target=my_system, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue,))
 		t.start()
 		threads.append(t)
 	

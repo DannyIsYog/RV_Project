@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------------------------
 def trigger_ca(node):
 	trigger_node = node # CA message - node id
-	ca_user_data  = 10 # generation interval
+	ca_user_data  = 10 # generation interval	
 	return int(ca_user_data)
 
 #------------------------------------------------------------------------------------------------
