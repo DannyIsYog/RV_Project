@@ -103,7 +103,7 @@ def main(argv):
 		# Arguments - car movement: controls the car movement
 		#           - services_rxd_queue: queue to get data from ca_service_rxd or den_service_rxd
 		#             my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
-		t=Thread(target=application_rxd, args=(node_id, start_flag, services_rxd_queue, my_system_rxd_queue,))
+		t=Thread(target=application_rxd, args=(node_id, node_type, start_flag, services_rxd_queue, my_system_rxd_queue,))
 		t.start()
 		threads.append(t)
 	
@@ -131,7 +131,7 @@ def main(argv):
 		# Thread - ca_service_rxd: receive data from geonetwork_rxd, process the CA message and send the result to the application_rxd
 		# Arguments - geonetwork_rxd_ca_queue: queue to get data from geonetwork_rxd
 		#             ca_service_rxd_queue: queue to send data to application_rxd
-		t=Thread(target=ca_service_rxd, args=(node_id, start_flag, geonetwork_rxd_ca_queue, services_rxd_queue,))
+		t=Thread(target=ca_service_rxd, args=(node_id, node_type, start_flag, geonetwork_rxd_ca_queue, services_rxd_queue,))
 		t.start()
 		threads.append(t)
 

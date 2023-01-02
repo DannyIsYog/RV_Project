@@ -10,9 +10,7 @@ from facilities.services import *
 # Thread - ca_service_txd - periodical transmission of CA messages.
 #------------------------------------------------------------------------------------------------
 def ca_service_txd(node, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue):
-	print("here\n")
 	if node_type == 'OBU':
-		print(node_type)
 		while not start_flag.isSet():
 			time.sleep (1)
 		print('STATUS: Ready to start - THREAD: ca_service_txd - NODE: {}'.format(node),'\n')
@@ -33,17 +31,17 @@ def ca_service_txd(node, node_type, start_flag, coordinates, obd_2_interface, ca
 #------------------------------------------------------------------------------------------------
 # Thread - ca_service_exd - reception of CA messages and transmission to the application_rxd 
 #------------------------------------------------------------------------------------------------
-def ca_service_rxd(node, start_flag, geonetwork_rxd_ca_queue, services_rxd_queue):
+def ca_service_rxd(node, node_type, start_flag, geonetwork_rxd_ca_queue, services_rxd_queue):
 
+	if node_type == 'RSU':
+		while not start_flag.isSet():
+			time.sleep (1)
+		print('STATUS: Ready to start - THREAD: ca_service_rxd - NODE: {}'.format(node),'\n')
 
-	while not start_flag.isSet():
-		time.sleep (1)
-	print('STATUS: Ready to start - THREAD: ca_service_rxd - NODE: {}'.format(node),'\n')
-
-	while True :
-		ca_msg_rxd=geonetwork_rxd_ca_queue.get()
-#		print('STATUS: Message received/send - THREAD: ca_service_rxd - NODE: {}'.format(node),' - MSG: {}'.format(ca_msg_rxd),'\n')
-		services_rxd_queue.put(ca_msg_rxd)
+		while True :
+			ca_msg_rxd=geonetwork_rxd_ca_queue.get()
+	#		print('STATUS: Message received/send - THREAD: ca_service_rxd - NODE: {}'.format(node),' - MSG: {}'.format(ca_msg_rxd),'\n')
+			services_rxd_queue.put(ca_msg_rxd)
 	return
 
 #------------------------------------------------------------------------------------------------

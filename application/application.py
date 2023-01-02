@@ -52,7 +52,7 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 #       		the den_service_txd_queue so that the node can relay the DEN message. 
 # 				Do not forget to this also at IST_core.py
 #-----------------------------------------------------------------------------------------
-def application_rxd(node, start_flag, services_rxd_queue, my_system_rxd_queue):
+def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_rxd_queue):
 
 	while not start_flag.isSet():
 		time.sleep (1)
