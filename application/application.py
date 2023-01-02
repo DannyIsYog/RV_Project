@@ -24,15 +24,15 @@ warm_up_time = 10
 #		TIPS: i) You may want to add more data to the messages, by adding more fields to the dictionary
 # 			  ii)  user interface is useful to allow the user to control your system execution.
 #-----------------------------------------------------------------------------------------
-def application_txd(node, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue):
+def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue):
 
 	while not start_flag.isSet():
 		time.sleep (1)
-	print('STATUS: Ready to start - THREAD: application_txd - NODE: {}'.format(node),'\n')
+	print('STATUS: Ready to start - THREAD: application_txd - NODE: {}'.format(node), '\n')
 
 	time.sleep(warm_up_time)
 	ca_user_data  = trigger_ca(node)
-#	print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_user_data ),'\n')
+	print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_user_data ),'\n')
 	ca_service_txd_queue.put(int(ca_user_data))
 	i=0
 	while True:

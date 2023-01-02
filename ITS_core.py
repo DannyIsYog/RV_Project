@@ -66,13 +66,14 @@ def main(argv):
 	global obd_2_interface, coordinates
 
 	command=input('Press enter to start')
-	if (len(argv)<7):
-		print('ERROR: Missing arguments: node number pos_x pos_y speed direction (b f) heading (N S E O)')
+	if (len(argv)<8):
+		print('ERROR: Missing arguments: node_number node_type pos_x pos_y speed direction (b f) heading (N S E O)')
 		sys.exit()
 	else:
 		node_id = argv[1]
-		coordinates = {'x':int(argv[2]), 'y':int(argv[3]), 't': repr(time.time())}
-		obd_2_interface = {'speed': int(argv[4]), 'direction': argv[5], 'heading': argv[6], 'status': "0", 'time': repr(time.time())}
+		node_type = argv[2]
+		coordinates = {'x':int(argv[3]), 'y':int(argv[4]), 't': repr(time.time())}
+		obd_2_interface = {'speed': int(argv[5]), 'direction': argv[6], 'heading': argv[7], 'status': "0", 'time': repr(time.time())}
 		print ('STATUS: node_id: ', node_id, 'coordinates: ', coordinates, '\nobd_2_interface: ', obd_2_interface)
 	threads=[]
 
@@ -93,7 +94,7 @@ def main(argv):
 		#             my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
 		# 			  ca_service_txd_queue: queue to send data to ca_services_txd
 		#             den_service_txd_queue: queue to send data to den_services_txd
-		t=Thread(target=application_txd, args=(node_id, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue,))
+		t=Thread(target=application_txd, args=(node_id, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue,))
 		t.start()
 		threads.append(t)
 	
@@ -123,7 +124,7 @@ def main(argv):
 		# Arguments - coordinates: last known coordinates
 		#             ca_services_txd_queue: queue to get data from application_txd
 		#             geonetwork_txd_queue: queue to send data to geonetwork_txd
-		t=Thread(target=ca_service_txd, args=(node_id, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue,))
+		t=Thread(target=ca_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue,))
 		t.start()
 		threads.append(t)
 
@@ -138,7 +139,7 @@ def main(argv):
 		# Arguments - coordinates: last known coordinates
 		#             den_services_txd_queue: queue to get data from application_txd
 		# #           geonetwork_txd_queue: queue to send data to geonetwork_txd
-		t=Thread(target=den_service_txd, args=(node_id, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue,))
+		t=Thread(target=den_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue,))
 		t.start()
 		threads.append(t)
 

@@ -9,10 +9,8 @@
 #       (out) - time between ca message generation
 #-------------------------------------------------------------------------------------------------
 def trigger_ca(node):
-	trigger_node=-1
-	while trigger_node!= node:
-		trigger_node  = input (' CA message - node id >   ')
-	ca_user_data  = input ('\nCA message - Generation interval >   ')
+	trigger_node = node # CA message - node id
+	ca_user_data  = 10 # generation interval
 	return int(ca_user_data)
 
 #------------------------------------------------------------------------------------------------
