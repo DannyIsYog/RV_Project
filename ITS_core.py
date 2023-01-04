@@ -51,7 +51,23 @@ start_flag=Event()
 # obd_2_interface - dictionary with the vehicle's dynamic in the format (speed, direction, heading)
 coordinates = dict()
 obd_2_interface = dict()
+obu_info = dict() # (name, max_capacity, free)
+au_info = dict() # (name, destination, number of passengers)
+rsu_info = dict() # (id, obu_list)
 
+def update_obu_info(name, capacity, free):
+	obu_info = {'name': name, 'max_capacity': capacity, 'free': free}
+	return obu_info
+
+
+def update_au_info(name, destination, num_passengers):
+	au_info = {'name': name, 'destination': destination, 'num_passengers': num_passengers}
+	return au_info
+
+
+def update_rsu_info(id, obu_list):
+	rsu_info = {'id': id, 'obu_list': obu_list}
+	return rsu_info
 
 # INPUT ARGUMENTS
 # node_id
@@ -82,16 +98,19 @@ def main(argv):
 		if node_type == "OBU":
 			name = input ("Input vehicle's name >   ")
 			max_capacity = input ("Input vehicle's maximum capacity > ")
-			update_obu_info(name, max_capacity, max_capacity)
+			global obu_info
+			obu_info = update_obu_info(name, max_capacity, max_capacity)
 		if node_type == "AU":
 			aux_name = input ("Input passenger's name >   ")
 			destination = input ("Input destination >   ")
 			num_passengers = input ("Input number of passengers >    ")
-			update_au_info(aux_name, destination, num_passengers)
+			global au_info
+			au_info = update_au_info(aux_name, destination, num_passengers)
 		if node_type == "RSU":
 			id = input ("Input RSU identfication >   ")
 			obu_list = []
-			update_rsu_info(id, obu_list)
+			global rsu_info
+			rsu_info = update_rsu_info(id, obu_list)
 		###########	
 
 	threads=[]
@@ -113,7 +132,7 @@ def main(argv):
 		#             my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
 		# 			  ca_service_txd_queue: queue to send data to ca_services_txd
 		#             den_service_txd_queue: queue to send data to den_services_txd
-		t=Thread(target=application_txd, args=(node_id, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue,))
+		t=Thread(target=application_txd, args=(node_id, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
 	
@@ -122,7 +141,7 @@ def main(argv):
 		# Arguments - car movement: controls the car movement
 		#           - services_rxd_queue: queue to get data from ca_service_rxd or den_service_rxd
 		#             my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
-		t=Thread(target=application_rxd, args=(node_id, node_type, start_flag, services_rxd_queue, my_system_rxd_queue,))
+		t=Thread(target=application_rxd, args=(node_id, node_type, start_flag, services_rxd_queue, my_system_rxd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
 	
@@ -130,7 +149,7 @@ def main(argv):
 		# Thread - my_system: business logic 
 		# Arguments - my_system_rxd_queue: queue to receive data from other application layer threads relevant for business logic decision-process 
 		#           - movement_control_txd_queue: queue to send commands to control vehicles movement
-		t=Thread(target=my_system, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue,))
+		t=Thread(target=my_system, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
 	
@@ -158,7 +177,7 @@ def main(argv):
 		# Arguments - coordinates: last known coordinates
 		#             den_services_txd_queue: queue to get data from application_txd
 		# #           geonetwork_txd_queue: queue to send data to geonetwork_txd
-		t=Thread(target=den_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue,))
+		t=Thread(target=den_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
 
@@ -166,7 +185,7 @@ def main(argv):
 		# Arguments - geonetwork_rxd_den_queue: queue to get data from geonetwork_rxd
 		#             services_rxd_queue: queue to send data to application_rxd
 		#             services_txd_queue: queue to relay data to geonetwork_txd in case of multi-hop communication
-		t=Thread(target=den_service_rxd, args=(node_id, start_flag, geonetwork_rxd_den_queue, services_rxd_queue,))
+		t=Thread(target=den_service_rxd, args=(node_id, start_flag, geonetwork_rxd_den_queue, services_rxd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
 
@@ -256,3 +275,5 @@ def main(argv):
 
 if __name__=="__main__":
 	main(sys.argv[0:])
+
+

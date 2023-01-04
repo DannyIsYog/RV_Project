@@ -48,7 +48,7 @@ def ca_service_rxd(node, node_type, start_flag, geonetwork_rxd_ca_queue, service
 # Thread - den_service_txd -  transmission of DEN messages.
 #			Note: for message repetition, you need to include the repetition mechanism.
 #------------------------------------------------------------------------------------------------
-def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, den_service_txd_queue, geonetwork_txd_queue):
+def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, den_service_txd_queue, geonetwork_txd_queue, au_info, obu_info, rsu_info):
 
 	while not start_flag.isSet():
 		time.sleep (1)
@@ -66,7 +66,7 @@ def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, de
 #------------------------------------------------------------------------------------------------
 # Thread - den_service_exd - reception of DEN messages and transmission to the application_rxd 
 #------------------------------------------------------------------------------------------------
-def den_service_rxd(node, start_flag, geonetwork_rxd_den_queue, services_rxd_queue):
+def den_service_rxd(node, start_flag, geonetwork_rxd_den_queue, services_rxd_queue, au_info, obu_info, rsu_info):
 
 	while not start_flag.isSet():
 		time.sleep (1)

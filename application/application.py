@@ -15,9 +15,6 @@ from in_vehicle_network.location_functions import position_read
 # constants
 warm_up_time = 10
 
-obu_info = dict() # (name, max_capacity, free)
-au_info = dict() # (name, destination, number of passengers)
-rsu_info = dict() # (id, obu_list)
 
 #-----------------------------------------------------------------------------------------
 # Thread: application transmission. In this example user triggers CA and DEN messages. 
@@ -28,7 +25,7 @@ rsu_info = dict() # (id, obu_list)
 #		TIPS: i) You may want to add more data to the messages, by adding more fields to the dictionary
 # 			  ii)  user interface is useful to allow the user to control your system execution.
 #-----------------------------------------------------------------------------------------
-def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue):
+def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue, au_info, obu_info, rsu_info):
 
 	while not start_flag.isSet():
 		time.sleep (1)
@@ -41,9 +38,9 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 	i=0
 	while True:
 		i=i+1
-#		den_user_data = trigger_event(node)
-#		print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(den_user_data ),'\n')
-#		den_service_txd_queue.put(den_user_data)
+		den_user_data = trigger_event(node, node_type, au_info, obu_info, rsu_info)
+		print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(den_user_data ),'\n')
+		den_service_txd_queue.put(den_user_data)
 	return
 
 
@@ -56,7 +53,7 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 #       		the den_service_txd_queue so that the node can relay the DEN message. 
 # 				Do not forget to this also at IST_core.py
 #-----------------------------------------------------------------------------------------
-def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_rxd_queue):
+def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_rxd_queue, au_info, obu_info, rsu_info):
 
 	while not start_flag.isSet():
 		time.sleep (1)
@@ -64,7 +61,7 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 
 	while True :
 		msg_rxd=services_rxd_queue.get()
-#		print('STATUS: Message received/send - THREAD: application_rxd - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
+		#print('STATUS: Message received/send - THREAD: application_rxd - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
 		if msg_rxd['node']!=node:
 			my_system_rxd_queue.put(msg_rxd)
 
@@ -85,7 +82,7 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 #               change the thread structure by adding the den_service_txd_queue so that this thread can send th DEN message. 
 # 				Do not forget to this also at IST_core.py
 #-----------------------------------------------------------------------------------------
-def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, movement_control_txd_queue):
+def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info):
 
 
 	safety_emergency_distance = 20
@@ -115,24 +112,29 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 		if (msg_rxd == "MOVE"):
 			car_test_drive (movement_control_txd_queue)
 #			print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
+		if msg_rxd['msg_type']=='DEN':
+			if node_type == 'RSU' and msg_rxd['event']['receiver_node_type'] == 'RSU':
 
-	return
+				# AU -> RSU: request trip
+				if (msg_rxd['event']['sender_node_type'] == 'AU'):
+					print('Received trip request')
+					type = 'OBU'
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'num_passengers': msg_rxd['event']['num_passengers']}
+					den_service_txd_queue.put(den_user_data)
 
+				# OBU -> RSU: accepts/rejects booking
+				if (msg_rxd['event']['sender_node_type'] == 'OBU'):
+					print('Received OBU confirmation')
+					confirmation = msg_rxd['event']['confirmation']
+					type = 'AU'
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_info['name'], 'confirmation': confirmation}
+					den_service_txd_queue.put(den_user_data)
+			
+			if node_type == 'AU' and msg_rxd['event']['receiver_node_type'] == 'AU':
+				print('MENSAGEM PARA AU')
 
-def update_obu_info(name, capacity, free):
-	global obu_info 
-	obu_info = {'name': name, 'max_capacity': capacity, 'free': free}
-	return
+			if node_type == 'OBU' and msg_rxd['event']['receiver_node_type'] == 'OBU':
+				print('MENSAGEM PARA OBU')
 
-
-def update_au_info(name, destination, num_passengers):
-	global au_info 
-	au_info = {'name': name, 'destination': destination, 'num_passengers': num_passengers}
-	return
-
-
-def update_rsu_info(id, obu_list):
-	global rsu_info 
-	obu_info = {'id': id, 'obu_list': obu_list}
 	return
 
