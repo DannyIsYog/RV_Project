@@ -51,12 +51,12 @@ start_flag=Event()
 # obd_2_interface - dictionary with the vehicle's dynamic in the format (speed, direction, heading)
 coordinates = dict()
 obd_2_interface = dict()
-obu_info = dict() # (name, max_capacity, free)
+obu_info = dict() # (name, destination, max_capacity, free)
 au_info = dict() # (name, destination, number of passengers)
 rsu_info = dict() # (id, obu_list)
 
-def update_obu_info(name, capacity, free):
-	obu_info = {'name': name, 'max_capacity': capacity, 'free': free}
+def update_obu_info(name, destination, capacity, free):
+	obu_info = {'name': name, 'destination': destination ,'max_capacity': capacity, 'free': free}
 	return obu_info
 
 
@@ -98,8 +98,9 @@ def main(argv):
 		if node_type == "OBU":
 			name = input ("Input vehicle's name >   ")
 			max_capacity = input ("Input vehicle's maximum capacity > ")
+			dest = input ("Input vehicle's destination >   ")
 			global obu_info
-			obu_info = update_obu_info(name, max_capacity, max_capacity)
+			obu_info = update_obu_info(name, dest, max_capacity, max_capacity)
 		if node_type == "AU":
 			aux_name = input ("Input passenger's name >   ")
 			destination = input ("Input destination >   ")
@@ -108,7 +109,7 @@ def main(argv):
 			au_info = update_au_info(aux_name, destination, num_passengers)
 		if node_type == "RSU":
 			id = input ("Input RSU identfication >   ")
-			obu_list = []
+			obu_list = [obu_info]
 			global rsu_info
 			rsu_info = update_rsu_info(id, obu_list)
 		###########	

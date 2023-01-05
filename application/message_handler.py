@@ -25,41 +25,40 @@ def trigger_ca(node):
 def trigger_event(node, node_type, au_info, obu_info, rsu_info):
 	trigger_node  = node # CA message - node id
 
+	# Messages sent by RSU -> triggered by other events (application.py)
 	if node_type == "RSU":
-		event_type = input (' DEN message - djfhskladsfd >   ')
-		type = 'AU'
-		msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'id': rsu_info['id']}
-
-		return msg
+		event_type = input (' DEN message - Waiting for events   ')
 
 
-		
-	#	event_type = input (' DEN message - Event type >   ')
-	#	event_status = input (' DEN message - Event status (start | update | stop) >   ')
-	#	event_id = input (' DEN message - Event identifier >   ')
-	#	if event_status == 'start':
-	#		rep_interval = input (' DEN message - repetition interval (0 if single event) >   ')
-	#		n_hops = input (' DEN message - Maximum hop number >   ')
-	#		roi_x  = input (' DEN message - ROI x coordinates (0 if none)>   ')
-	#		roi_y  = input (' DEN message - ROI y coordinates (0 if none) >   ')
-	#		latency = input (' DEN message - maximum latency >   ')
-	#	event_msg={'event_type':event_type, 'event_status': event_status, 'event_id': int(event_id), 'rep_interval':int(rep_interval), 'n_hops': int(n_hops), 'roi_x':int(roi_x), 'roi_y': int(roi_y), 'latency':int(latency)}
-	#	return event_msg
-	
+	# Messages sent by AU
 	if node_type == "AU":
 
+		# AU -> RSU: request trip
 		event_type = input (' DEN message - Request trip (y/n) >   ')
-		if (event_type == 'n'):
-			return
-		type = 'RSU'
-		msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': au_info['name'], 'num_passengers': au_info['num_passengers'], 'destination': au_info['destination']}
-		return msg
+		if (event_type == 'y'):
+			type = 'RSU'
+			msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': au_info['name'], 'num_passengers': au_info['num_passengers'], 'destination': au_info['destination']}
+			return msg
 
+	# Messages sent by OBU
 	if node_type == "OBU":
-		event_type = input (' DEN message - coisa >   ')
+
+		# OBU -> RSU: AU entered OBU
+		event_type = input (' DEN message - AU entered (y/n) >   ')
 		type = 'RSU'
-		msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free']}
-		return msg
+		if (event_type == 'y'):
+			obu_info['free'] -= 1
+			msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free'], 'msg_type': 'entered'}
+			return msg
+		if (event_type == 'n'):
+		# OBU -> RSU: AU left OBU
+			event_type2 = input ('DEN message - AU left (y/n) >   ')
+			if (event_type2 == 'y'):
+				obu_info['free'] += 1
+				msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free'], 'msg_type': 'left'}
+				return msg
+
+		
 
 
 #------------------------------------------------------------------------------------------------

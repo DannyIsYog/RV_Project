@@ -5,6 +5,7 @@
 #######################################################################################################
 from socket import MsgFlag
 import time
+from ITS_core import update_rsu_info
 from application.message_handler import *
 from application.self_driving_test import *
 from in_vehicle_network.location_functions import position_read
@@ -101,18 +102,20 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 		if (msg_rxd['msg_type']=='CA'):
 			nodes_distance=distance (coordinates, obd_2_interface, msg_rxd)
 			print ('CA --- >   nodes_ distance ', nodes_distance)
-			if (nodes_distance < safety_emergency_distance):
-				print ('----------------STOP-------------------')
-				stop_car (movement_control_txd_queue)
-				print(coordinates)
-			elif (nodes_distance < safety_warning_distance):
-				print ('----------------SLOW DOWN  ------------------------------')
-				car_move_slower(movement_control_txd_queue)
-				print(coordinates)
-		if (msg_rxd == "MOVE"):
-			car_test_drive (movement_control_txd_queue)
+			#if (nodes_distance < safety_emergency_distance):
+			#	print ('----------------STOP-------------------')
+			#	stop_car (movement_control_txd_queue)
+			#	print(coordinates)
+			#elif (nodes_distance < safety_warning_distance):
+			#	print ('----------------SLOW DOWN  ------------------------------')
+			#	car_move_slower(movement_control_txd_queue)
+			#	print(coordinates)
+		#if (msg_rxd == "MOVE"):
+			#car_test_drive (movement_control_txd_queue)
 #			print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
 		if msg_rxd['msg_type']=='DEN':
+
+			# Messages received by RSU
 			if node_type == 'RSU' and msg_rxd['event']['receiver_node_type'] == 'RSU':
 
 				# AU -> RSU: request trip
@@ -123,18 +126,65 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 					den_service_txd_queue.put(den_user_data)
 
 				# OBU -> RSU: accepts/rejects booking
-				if (msg_rxd['event']['sender_node_type'] == 'OBU'):
+				if (msg_rxd['event']['sender_node_type'] == 'OBU' and msg_rxd['event']['msg_type'] == 'booking'):
 					print('Received OBU confirmation')
 					confirmation = msg_rxd['event']['confirmation']
 					type = 'AU'
 					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_info['name'], 'confirmation': confirmation}
 					den_service_txd_queue.put(den_user_data)
-			
-			if node_type == 'AU' and msg_rxd['event']['receiver_node_type'] == 'AU':
-				print('MENSAGEM PARA AU')
 
+				# OBU -> RSU: AU entered OBU
+				if (msg_rxd['event']['sender_node_type'] == 'OBU' and msg_rxd['event']['msg_type'] == 'entered'):
+					print('AU entered OBU')
+					# update OBU_list in RSU_info
+					new_obu_list = [obu_info]
+					update_rsu_info(rsu_info['id'], new_obu_list)
+					print('OBU\'s free space is now:   ')
+					print(obu_info['free'])
+					
+				# OBU -> RSU: AU left OBU
+				if (msg_rxd['event']['sender_node_type'] == 'OBU' and msg_rxd['event']['msg_type'] == 'left'):
+					print('AU left OBU')
+					# update OBU_list in RSU_info
+					new_obu_list = [obu_info]
+					update_rsu_info(rsu_info['id'], new_obu_list)
+					print('OBU\'s free space is now:   ')
+					print(obu_info['free'])
+
+			# Messages received by AU
+			if node_type == 'AU' and msg_rxd['event']['receiver_node_type'] == 'AU':
+
+				# RSU -> AU: trip confirmation
+				if (msg_rxd['event']['sender_node_type'] == 'RSU'):
+					print('Received trip confirmation:   ')
+					if (msg_rxd['event']['confirmation'] == 'OK'):
+						print('Trip confirmed successfully! :)')
+					if (msg_rxd['event']['confirmation'] == 'NOT OK'):
+						print('Trip canceled, no seats available or no OBU going to your destination :(')
+
+			# Messages received by OBU
 			if node_type == 'OBU' and msg_rxd['event']['receiver_node_type'] == 'OBU':
-				print('MENSAGEM PARA OBU')
+
+				# RSU -> OBU: book seats
+				if (msg_rxd['event']['sender_node_type'] == 'RSU'):
+					print('Received booking request')
+					
+					# booking NOT OK
+					print(au_info)
+					if (obu_info['free'] == 0 or obu_info['destination'] != au_info['destination']):
+						print('Booking request NOT OK')
+						confirmation = 'NOT OK'
+						type = 'RSU'
+						den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_info['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
+						den_service_txd_queue.put(den_user_data)
+					
+					#booking OK
+					print('Booking request OK')
+					confirmation = 'OK'
+					type = 'RSU'
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_info['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
+					den_service_txd_queue.put(den_user_data)
+				
 
 	return
 
