@@ -8,10 +8,10 @@
 # trigger_ca -trigger the generation of CA messages
 #       (out) - time between ca message generation
 #-------------------------------------------------------------------------------------------------
-def trigger_ca(node):
-	trigger_node = node # CA message - node id
-	ca_user_data  = 10 # generation interval	
-	return int(ca_user_data)
+def trigger_ca(node, obu_info):
+	gen_time = 10 # generation interval
+	msg = {'node': node, 'generation_time': gen_time, 'obu_name': obu_info['name'], 'obu_destination': obu_info['destination'], 'obu_capacity': obu_info['max_capacity'], 'obu_free': obu_info['free']}
+	return msg
 
 #------------------------------------------------------------------------------------------------
 # trigger_even -trigger an event that will generate a DEN messsge
@@ -47,14 +47,16 @@ def trigger_event(node, node_type, au_info, obu_info, rsu_info):
 		event_type = input (' DEN message - AU entered (y/n) >   ')
 		type = 'RSU'
 		if (event_type == 'y'):
-			obu_info['free'] -= 1
+			res = int(obu_info['free']) - 1
+			obu_info['free'] = str(res)
 			msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free'], 'msg_type': 'entered'}
 			return msg
 		if (event_type == 'n'):
 		# OBU -> RSU: AU left OBU
 			event_type2 = input ('DEN message - AU left (y/n) >   ')
 			if (event_type2 == 'y'):
-				obu_info['free'] += 1
+				res = int(obu_info['free']) + 1
+				obu_info['free'] = str(res)
 				msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free'], 'msg_type': 'left'}
 				return msg
 

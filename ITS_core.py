@@ -65,8 +65,8 @@ def update_au_info(name, destination, num_passengers):
 	return au_info
 
 
-def update_rsu_info(id, obu_list):
-	rsu_info = {'id': id, 'obu_list': obu_list}
+def update_rsu_info(id, obu_info):
+	rsu_info = {'id': id, 'obu': obu_info}
 	return rsu_info
 
 # INPUT ARGUMENTS
@@ -109,9 +109,8 @@ def main(argv):
 			au_info = update_au_info(aux_name, destination, num_passengers)
 		if node_type == "RSU":
 			id = input ("Input RSU identfication >   ")
-			obu_list = [obu_info]
 			global rsu_info
-			rsu_info = update_rsu_info(id, obu_list)
+			rsu_info = update_rsu_info(id, obu_info)
 		###########	
 
 	threads=[]

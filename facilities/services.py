@@ -14,11 +14,15 @@ from in_vehicle_network.location_functions import *
 #                    - obd_2_interface: vehicle's dynamic information (speed, direction and heading).
 #-------------------------------------------------------------------------------------------------
 
-def create_ca_message(node, node_type, msg_id,coordinates, obd_2_interface):
+def create_ca_message(node, node_type, msg_id, coordinates, obd_2_interface, obu_info):
 	
 	x,y,t = position_read(coordinates)
 	s,d,h = get_vehicle_info(obd_2_interface)
-	ca_msg= {'msg_type':'CA', 'node':node, 'node_type':node_type, 'msg_id':msg_id,'pos_x': x,'pos_y': y,'time':t,'speed': s, 'dir':d, 'heading':h, }
+	name = obu_info['name']
+	dest = obu_info['destination']
+	cap = obu_info['max_capacity']
+	free = obu_info['free']
+	ca_msg= {'msg_type':'CA', 'node':node, 'node_type':node_type, 'msg_id':msg_id,'pos_x': x,'pos_y': y,'time':t,'speed': s, 'dir':d, 'heading':h, 'obu_name': name, 'obu_destination': dest, 'obu_capacity': cap, 'obu_free': free}
 	return ca_msg
 
 #------------------------------------------------------------------------------------------------
