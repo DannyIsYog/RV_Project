@@ -8,6 +8,7 @@ import time
 from ITS_core import update_rsu_info
 from ITS_core import update_au_info
 from ITS_core import update_obu_info
+
 from application.message_handler import *
 from application.self_driving_test import *
 from in_vehicle_network.location_functions import position_read
@@ -33,8 +34,8 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 	while not start_flag.isSet():
 		time.sleep (1)
 	print('STATUS: Ready to start - THREAD: application_txd - NODE: {}'.format(node), '\n')
-
 	time.sleep(warm_up_time)
+	
 	if node_type == 'OBU':
 		ca_user_data  = trigger_ca(node, obu_info)
 		#print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_user_data),'\n')
@@ -44,6 +45,10 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 	while True:
 		i=i+1
 		den_user_data = trigger_event(node, node_type, au_info, obu_info, rsu_info)
+
+		if (node_type == 'OBU'):
+			obu_info = update_obu_info(obu_info, den_user_data['name'], obu_info['destination'], den_user_data['capacity'], den_user_data['free space'])
+
 		#print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(den_user_data ),'\n')
 		den_service_txd_queue.put(den_user_data)
 	return
@@ -92,13 +97,18 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 	safety_emergency_distance = 20
 	safety_warning_distance = 50
 
+
+	while not start_flag.isSet():
+		time.sleep (1)
+	print('STATUS: Ready to start - THREAD: my_system - NODE: {}'.format(node),'\n')
+
 	au_temp = au_info
 	obu_temp = obu_info
 	rsu_temp = rsu_info
 
-	while not start_flag.isSet():
-		time.sleep (1)
-	print('STATUS: Ready to start - THREAD: my_system - NODE: {}'.format(node),'\n')	
+	if (obu_info != {}):
+		obu_temp = update_obu_info(obu_temp, obu_info['name'], obu_info['destination'], obu_info['max_capacity'], obu_info['free'])
+
 
 	enter_car(movement_control_txd_queue)
 	turn_on_car(movement_control_txd_queue)
@@ -107,18 +117,20 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 	while True :
 		msg_rxd=my_system_rxd_queue.get()
 
-		print(au_temp)
-		print(obu_temp)
-		print(rsu_temp)
-
-
-
 		if (msg_rxd['msg_type']=='CA'):
 			nodes_distance=distance (coordinates, obd_2_interface, msg_rxd)
 			print ('CA --- >   nodes_ distance ', nodes_distance)
+
+			print('-----------------------------------------')
+			print('-----------------------------------------\n AU:\n', au_temp)
+			print('-----------------------------------------\n OBU:\n', obu_temp)
+			print('-----------------------------------------\n RSU:\n', rsu_temp)
+			print('-----------------------------------------\n')
 			
-			obu_temp = update_obu_info(msg_rxd['obu_name'], msg_rxd['obu_destination'], msg_rxd['obu_capacity'], msg_rxd['obu_free'])
+			obu_temp = update_obu_info(obu_temp, msg_rxd['obu_name'], msg_rxd['obu_destination'], msg_rxd['obu_capacity'], msg_rxd['obu_free'])
 			rsu_temp = update_rsu_info(rsu_temp['id'], obu_temp)
+
+			
 
 			#if (nodes_distance < safety_emergency_distance):
 			#	print ('----------------STOP-------------------')
@@ -145,7 +157,7 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 
 					# RSU -> OBU: book seats
 					type = 'OBU'
-					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'au_name': msg_rxd['event']['name'], 'destination': msg_rxd['event']['destination'], 'num_passengers': msg_rxd['event']['num_passengers']}
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'au_name': msg_rxd['event']['name'], 'destination': msg_rxd['event']['destination'], 'num_passengers': msg_rxd['event']['num_passengers'], 'msg_type': 'booking'}
 					den_service_txd_queue.put(den_user_data)
 
 				# OBU -> RSU: accepts/rejects booking
@@ -162,19 +174,31 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 				if (msg_rxd['event']['sender_node_type'] == 'OBU' and msg_rxd['event']['msg_type'] == 'entered'):
 					print('AU entered OBU')
 
-					# update OBU_list in RSU_info
+					# update OBU free space
+					obu_temp = update_obu_info(obu_temp, obu_temp['name'], obu_temp['destination'], obu_temp['max_capacity'], msg_rxd['event']['free space'])
 					rsu_temp = update_rsu_info(rsu_temp['id'], obu_temp)
 					print('OBU\'s free space is now:   ')
 					print(obu_temp['free'])
+
+					# RSU -> OBU: AU entered OBU (ACK)
+					type = 'OBU'
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'free space': obu_temp['free'], 'msg_type': 'entered'}
+					den_service_txd_queue.put(den_user_data)
 					
 				# OBU -> RSU: AU left OBU
 				if (msg_rxd['event']['sender_node_type'] == 'OBU' and msg_rxd['event']['msg_type'] == 'left'):
 					print('AU left OBU')
 
-					# update OBU_list in RSU_info
+					# update OBU free space
+					obu_temp = update_obu_info(obu_temp, obu_temp['name'], obu_temp['destination'], obu_temp['max_capacity'], msg_rxd['event']['free space'])
 					rsu_temp = update_rsu_info(rsu_temp['id'], obu_temp)
 					print('OBU\'s free space is now:   ')
 					print(obu_temp['free'])
+
+					# RSU -> OBU: AU left OBU (ACK)
+					type = 'OBU'
+					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'free space': obu_temp['free'], 'msg_type': 'left'}
+					den_service_txd_queue.put(den_user_data)
 
 			# Messages received by AU
 			if node_type == 'AU' and msg_rxd['event']['receiver_node_type'] == 'AU':
@@ -191,13 +215,13 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 			if node_type == 'OBU' and msg_rxd['event']['receiver_node_type'] == 'OBU':
 
 				# RSU -> OBU: book seats
-				if (msg_rxd['event']['sender_node_type'] == 'RSU'):
+				if (msg_rxd['event']['sender_node_type'] == 'RSU' and msg_rxd['event']['msg_type'] == 'booking'):
 					au_temp = update_au_info(msg_rxd['event']['au_name'], msg_rxd['event']['destination'], msg_rxd['event']['num_passengers'])
 					print('Received booking request')
 					
 					# booking NOT OK
-					res = obu_temp['free'] + msg_rxd['event']['num_passengers']
-					if (obu_temp['free'] == 0 or obu_temp['destination'] != au_temp['destination'] or res > obu_temp['max_capacity']):
+					res = int(obu_temp['free']) - int(msg_rxd['event']['num_passengers'])
+					if (obu_temp['free'] == 0 or obu_temp['destination'] != au_temp['destination'] or res < 0):
 						print('Booking request NOT OK')
 
 						# OBU -> RSU: rejects booking
@@ -205,16 +229,32 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 						type = 'RSU'
 						den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_temp['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
 						den_service_txd_queue.put(den_user_data)
-					
-					#booking OK
-					print('Booking request OK')
+					else:
+						#booking OK
+						print('Booking request OK')
 
-					# OBU -> RSU: accepts booking
-					confirmation = 'OK'
-					type = 'RSU'
-					den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_temp['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
-					den_service_txd_queue.put(den_user_data)
+						# OBU -> RSU: accepts booking
+						confirmation = 'OK'
+						type = 'RSU'
+						den_user_data = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'obu_name': obu_temp['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
+						den_service_txd_queue.put(den_user_data)
 				
+				# RSU -> OBU: AU entered/left OBU (ACK)
+				if (msg_rxd['event']['sender_node_type'] == 'RSU' and (msg_rxd['event']['msg_type'] == 'entered' or msg_rxd['event']['msg_type'] == 'left')):
+					obu_temp = update_obu_info(obu_temp, obu_temp['name'], obu_temp['destination'], obu_temp['max_capacity'], msg_rxd['event']['free space'])
+		
+		if (node_type == 'OBU'):
+			obu_info = update_obu_info(obu_temp, obu_temp['name'], obu_temp['destination'], obu_temp['max_capacity'], obu_temp['free'])
+
+		if (node_type == 'AU'):
+			au_info = update_au_info(au_temp['name'], au_temp['destination'], au_temp['num_passengers'])
+
+		if (node_type == 'RSU'):
+			obu_info = update_obu_info(obu_temp, obu_temp['name'], obu_temp['destination'], obu_temp['max_capacity'], obu_temp['free'])
+			rsu_info = update_rsu_info(rsu_temp['id'], rsu_temp['obu'])
+
+			if (au_info != {}):
+				au_info = update_au_info(au_temp['name'], au_temp['destination'], au_temp['num_passengers'])
 
 	return
 

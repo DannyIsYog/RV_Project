@@ -4,3 +4,6 @@
 # obd_2_interface - dictionary with the vehicle's dynamic in the format (speed, direction, heading)
 coordinates = dict()
 obd_2_interface = dict()
+obu_info = dict() # (name, destination, max_capacity, free)
+au_info = dict() # (name, destination, number of passengers)
+rsu_info = dict() # (id, obu_list)

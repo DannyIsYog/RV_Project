@@ -59,6 +59,9 @@ def trigger_event(node, node_type, au_info, obu_info, rsu_info):
 				obu_info['free'] = str(res)
 				msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free'], 'msg_type': 'left'}
 				return msg
+			if (event_type2 == 'n'):
+				msg = {'node':node, 'sender_node_type': node_type, 'receiver_node_type': type, 'name': obu_info['name'], 'capacity': obu_info['max_capacity'], 'free space': obu_info['free']}
+				return msg
 
 		
 

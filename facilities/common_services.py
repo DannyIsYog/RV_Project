@@ -9,7 +9,7 @@ from facilities.services import *
 #------------------------------------------------------------------------------------------------
 # Thread - ca_service_txd - periodical transmission of CA messages.
 #------------------------------------------------------------------------------------------------
-def ca_service_txd(node, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue):
+def ca_service_txd(node, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue, obu_info):
 	if node_type == 'OBU':
 		while not start_flag.isSet():
 			time.sleep (1)
@@ -19,7 +19,7 @@ def ca_service_txd(node, node_type, start_flag, coordinates, obd_2_interface, ca
 		msg_id =0
 		msg = ca_service_txd_queue.get()
 		generation_time=msg['generation_time']
-		obu_info = {'name': msg['obu_name'], 'destination': msg['obu_destination'], 'max_capacity': msg['obu_capacity'], 'free': msg['obu_free']}
+		#obu_info = {'name': msg['obu_name'], 'destination': msg['obu_destination'], 'max_capacity': msg['obu_capacity'], 'free': msg['obu_free']}
 		while True :
 			ca_msg_txd = create_ca_message(node, node_type, msg_id, coordinates, obd_2_interface, obu_info)
 	#		print('STATUS: Message from user - THREAD: ca_service_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_msg_txd),'\n')
@@ -51,7 +51,7 @@ def ca_service_rxd(node, node_type, start_flag, geonetwork_rxd_ca_queue, service
 # Thread - den_service_txd -  transmission of DEN messages.
 #			Note: for message repetition, you need to include the repetition mechanism.
 #------------------------------------------------------------------------------------------------
-def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, den_service_txd_queue, geonetwork_txd_queue, au_info, obu_info, rsu_info):
+def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, den_service_txd_queue, geonetwork_txd_queue):
 
 	while not start_flag.isSet():
 		time.sleep (1)
@@ -69,7 +69,7 @@ def den_service_txd(node, node_type, start_flag, coordinates, obd2_interface, de
 #------------------------------------------------------------------------------------------------
 # Thread - den_service_exd - reception of DEN messages and transmission to the application_rxd 
 #------------------------------------------------------------------------------------------------
-def den_service_rxd(node, start_flag, geonetwork_rxd_den_queue, services_rxd_queue, au_info, obu_info, rsu_info):
+def den_service_rxd(node, start_flag, geonetwork_rxd_den_queue, services_rxd_queue):
 
 	while not start_flag.isSet():
 		time.sleep (1)

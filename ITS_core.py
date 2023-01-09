@@ -55,19 +55,22 @@ obu_info = dict() # (name, destination, max_capacity, free)
 au_info = dict() # (name, destination, number of passengers)
 rsu_info = dict() # (id, obu_list)
 
-def update_obu_info(name, destination, capacity, free):
-	obu_info = {'name': name, 'destination': destination ,'max_capacity': capacity, 'free': free}
-	return obu_info
+def update_obu_info(obu, name, destination, capacity, free):
+	obu['name'] = name
+	obu['destination'] = destination
+	obu['max_capacity'] = capacity
+	obu['free'] = free
+	return obu
 
 
 def update_au_info(name, destination, num_passengers):
-	au_info = {'name': name, 'destination': destination, 'num_passengers': num_passengers}
-	return au_info
+	au = {'name': name, 'destination': destination, 'num_passengers': num_passengers}
+	return au
 
 
-def update_rsu_info(id, obu_info):
-	rsu_info = {'id': id, 'obu': obu_info}
-	return rsu_info
+def update_rsu_info(id, obu):
+	rsu = {'id': id, 'obu': obu}
+	return rsu
 
 # INPUT ARGUMENTS
 # node_id
@@ -82,6 +85,7 @@ def update_rsu_info(id, obu_info):
 ##################################################
 def main(argv):
 	global obd_2_interface, coordinates
+	global obu_info, au_info, rsu_info
 
 	command=input('Press enter to start')
 	if (len(argv)<8):
@@ -99,17 +103,14 @@ def main(argv):
 			name = input ("Input vehicle's name >   ")
 			max_capacity = input ("Input vehicle's maximum capacity > ")
 			dest = input ("Input vehicle's destination >   ")
-			global obu_info
-			obu_info = update_obu_info(name, dest, max_capacity, max_capacity)
+			update_obu_info(obu_info, name, dest, max_capacity, max_capacity)
 		if node_type == "AU":
 			aux_name = input ("Input passenger's name >   ")
 			destination = input ("Input destination >   ")
 			num_passengers = input ("Input number of passengers >    ")
-			global au_info
 			au_info = update_au_info(aux_name, destination, num_passengers)
 		if node_type == "RSU":
 			id = input ("Input RSU identfication >   ")
-			global rsu_info
 			rsu_info = update_rsu_info(id, obu_info)
 		###########	
 
@@ -152,7 +153,6 @@ def main(argv):
 		t=Thread(target=my_system, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info,))
 		t.start()
 		threads.append(t)
-	
 
 		##################################################
 		#     Facilities layer threads
@@ -162,7 +162,7 @@ def main(argv):
 		# Arguments - coordinates: last known coordinates
 		#             ca_services_txd_queue: queue to get data from application_txd
 		#             geonetwork_txd_queue: queue to send data to geonetwork_txd
-		t=Thread(target=ca_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue,))
+		t=Thread(target=ca_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, ca_service_txd_queue, geonetwork_txd_queue, obu_info))
 		t.start()
 		threads.append(t)
 
@@ -177,7 +177,7 @@ def main(argv):
 		# Arguments - coordinates: last known coordinates
 		#             den_services_txd_queue: queue to get data from application_txd
 		# #           geonetwork_txd_queue: queue to send data to geonetwork_txd
-		t=Thread(target=den_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue, au_info, obu_info, rsu_info,))
+		t=Thread(target=den_service_txd, args=(node_id, node_type, start_flag, coordinates, obd_2_interface, den_service_txd_queue, geonetwork_txd_queue,))
 		t.start()
 		threads.append(t)
 
@@ -185,7 +185,7 @@ def main(argv):
 		# Arguments - geonetwork_rxd_den_queue: queue to get data from geonetwork_rxd
 		#             services_rxd_queue: queue to send data to application_rxd
 		#             services_txd_queue: queue to relay data to geonetwork_txd in case of multi-hop communication
-		t=Thread(target=den_service_rxd, args=(node_id, start_flag, geonetwork_rxd_den_queue, services_rxd_queue, au_info, obu_info, rsu_info,))
+		t=Thread(target=den_service_rxd, args=(node_id, start_flag, geonetwork_rxd_den_queue, services_rxd_queue,))
 		t.start()
 		threads.append(t)
 
