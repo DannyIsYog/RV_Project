@@ -121,7 +121,6 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 			nodes_distance=distance (coordinates, obd_2_interface, msg_rxd)
 			print ('CA --- >   nodes_ distance ', nodes_distance)
 
-			print('-----------------------------------------')
 			print('-----------------------------------------\n AU:\n', au_temp)
 			print('-----------------------------------------\n OBU:\n', obu_temp)
 			print('-----------------------------------------\n RSU:\n', rsu_temp)
