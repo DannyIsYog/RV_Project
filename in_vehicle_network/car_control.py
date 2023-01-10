@@ -121,21 +121,25 @@ def car_controller(node, start_flag, coordinates, obd_2_interface, movement_cont
     all_destinations = []
     last_location = 0
     while True:
+        # wait for new destination if all_destinations is empty
         if(all_destinations == []):
             print("Waiting for new destination...")
             new_dest = position_rxd_queue.get()
+        # if not empty, check if there is a new destination while the car is moving
         else:
             new_dest = position_rxd_queue.get(block=False)
 
         # check if dest is empty dictionary, if so ignore
         if (new_dest != {}):
-            all_destinations.append(new_dest['destination'])
+            all_destinations.insert(-1, new_dest['destination'])
             print('STATUS: New destination {} added - THREAD: car_controller - NODE: {}\n'.format(
                 new_dest['destination'], node), '\n')
 
         if(all_destinations != [] and car_on == False):
             print("Turning car on")
             car_move_forward(movement_control_txd_queue)
+            # add final destination
+            all_destinations.append(100)
             car_on = True
 
         # chekc if dest is empty dictionary
