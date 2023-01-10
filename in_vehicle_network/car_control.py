@@ -3,6 +3,8 @@
 # ACCESS TO IN-VEIHICLE SENSORS/ATUATORS AND GPS
 #################################################
 import time
+
+from numpy import block
 from in_vehicle_network.car_motor_functions import *
 from in_vehicle_network.location_functions import *
 
@@ -13,17 +15,31 @@ from in_vehicle_network.location_functions import *
 # -----------------------------------------------------------------------------------------
 
 
-def update_location(node, start_flag, coordinates, obd_2_interface):
-    gps_time = 2
-
+def update_location(node, start_flag, coordinates, obd_2_interface, dest, position_rxd_queue):
+    gps_time = 0.5
+    last_location = 0
+    if(node != '1'):
+        return
     while not start_flag.isSet():
         time.sleep(1)
     print('STATUS: Ready to start - THREAD: update_location - NODE: {}\n'.format(node), '\n')
 
     while True:
+        if(dest == {}):
+            dest = position_rxd_queue.get(block=False)
         time.sleep(gps_time)
         position_update(coordinates, obd_2_interface, gps_time)
-#		print('STATUS: New position update - THREAD: update_location - NODE: {}\n'.format(coordinates),'\n')
+        #print('STATUS: New position update - THREAD: update_location - NODE: {}\n'.format(coordinates), '\n')
+        #print('dest: ', dest)
+        # chekc if dest is empty dictionary
+        if(dest == {}):
+            continue
+        if (float(last_location) <= float(dest['destination']) and float(coordinates['y']) >= float(dest['destination'])):
+            print(
+                'STATUS: Destination reached - THREAD: update_location - NODE: {}\n'.format(coordinates), '\n')
+            stop_vehicle(obd_2_interface)
+            dest = {}
+        last_location = int(coordinates['y'])
     return
 
 

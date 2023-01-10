@@ -3,15 +3,18 @@
 # SENDING/RECEIVING APPLICATION THREADS - add your business logic here!
 # Note: you can use a single thread, if you prefer, but be carefully when dealing with concurrency.
 #######################################################################################################
+import imp
 from socket import MsgFlag
 import time
 from ITS_core import update_rsu_info
 from ITS_core import update_au_info
 from ITS_core import update_obu_info
+from ITS_core import update_current_destination
 
 from application.message_handler import *
 from application.self_driving_test import *
 from in_vehicle_network.location_functions import position_read
+from in_vehicle_network.car_control import *
 
 
 # #####################################################################################################
@@ -37,7 +40,7 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
 
     if node_type == 'OBU':
         ca_user_data = trigger_ca(node, obu_info)
-        #print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_user_data),'\n')
+        # print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(ca_user_data),'\n')
         ca_service_txd_queue.put(ca_user_data)
 
     i = 0
@@ -50,7 +53,7 @@ def application_txd(node, node_type, start_flag, my_system_rxd_queue, ca_service
             obu_info = update_obu_info(
                 obu_info, den_user_data['name'], obu_info['destination'], den_user_data['capacity'], den_user_data['free space'])
 
-        #print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(den_user_data ),'\n')
+        # print('STATUS: Message from user - THREAD: application_txd - NODE: {}'.format(node),' - MSG: {}'.format(den_user_data ),'\n')
         den_service_txd_queue.put(den_user_data)
     return
 
@@ -72,7 +75,7 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 
     while True:
         msg_rxd = services_rxd_queue.get()
-        #print('STATUS: Message received/send - THREAD: application_rxd - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
+        # print('STATUS: Message received/send - THREAD: application_rxd - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
         if msg_rxd['node'] != node:
             my_system_rxd_queue.put(msg_rxd)
 
@@ -93,7 +96,7 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 #               change the thread structure by adding the den_service_txd_queue so that this thread can send th DEN message.
 # 				Do not forget to this also at IST_core.py
 # -----------------------------------------------------------------------------------------
-def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info):
+def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info, dest, position_rxd_queue):
 
     safety_emergency_distance = 20
     safety_warning_distance = 50
@@ -116,6 +119,7 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 
     while True:
         msg_rxd = my_system_rxd_queue.get()
+        print(coordinates)
 
         if (msg_rxd['msg_type'] == 'CA'):
             nodes_distance = distance(coordinates, obd_2_interface, msg_rxd)
@@ -139,8 +143,8 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
             #	car_move_slower(movement_control_txd_queue)
             #	print(coordinates)
         # if (msg_rxd == "MOVE"):
-            #car_test_drive (movement_control_txd_queue)
-            #print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
+            # car_test_drive (movement_control_txd_queue)
+            # print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
 
         if msg_rxd['msg_type'] == 'DEN':
 
@@ -151,13 +155,13 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
                 if (msg_rxd['event']['sender_node_type'] == 'AU'):
 
                     au_temp = update_au_info(
-                        msg_rxd['event']['name'], msg_rxd['event']['destination'], msg_rxd['event']['num_passengers'])
+                        msg_rxd['event']['name'], msg_rxd['event']['destination'], msg_rxd['event']['num_passengers'], msg_rxd['event']['location'])
                     print('Received trip request')
 
                     # RSU -> OBU: book seats
                     type = 'OBU'
                     den_user_data = {'node': node, 'sender_node_type': node_type, 'receiver_node_type': type, 'au_name': msg_rxd['event'][
-                        'name'], 'destination': msg_rxd['event']['destination'], 'num_passengers': msg_rxd['event']['num_passengers'], 'msg_type': 'booking'}
+                        'name'], 'destination': msg_rxd['event']['destination'], 'num_passengers': msg_rxd['event']['num_passengers'], 'msg_type': 'booking', 'location': msg_rxd['event']['location']}
                     den_service_txd_queue.put(den_user_data)
 
                 # OBU -> RSU: accepts/rejects booking
@@ -223,7 +227,7 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
                 # RSU -> OBU: book seats
                 if (msg_rxd['event']['sender_node_type'] == 'RSU' and msg_rxd['event']['msg_type'] == 'booking'):
                     au_temp = update_au_info(
-                        msg_rxd['event']['au_name'], msg_rxd['event']['destination'], msg_rxd['event']['num_passengers'])
+                        msg_rxd['event']['au_name'], msg_rxd['event']['destination'], msg_rxd['event']['num_passengers'], msg_rxd['event']['location'])
                     print('Received booking request')
 
                     # booking NOT OK
@@ -250,6 +254,11 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
                         den_service_txd_queue.put(den_user_data)
                         if (car_on == False):
                             car_on = True
+
+                            dest = update_current_destination(
+                                au_temp['location']['x'])
+                            print('New destination:   ', dest)
+                            position_rxd_queue.put(dest)
                             car_move_forward(movement_control_txd_queue)
 
                 # RSU -> OBU: AU entered/left OBU (ACK)
@@ -263,7 +272,7 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 
         if (node_type == 'AU'):
             au_info = update_au_info(
-                au_temp['name'], au_temp['destination'], au_temp['num_passengers'])
+                au_temp['name'], au_temp['destination'], au_temp['num_passengers'], au_temp['location'])
 
         if (node_type == 'RSU'):
             obu_info = update_obu_info(

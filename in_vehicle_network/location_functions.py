@@ -19,8 +19,8 @@ def position_update(coordinates, obd_2_interface, time_interval):
         return
     # include here assisted gps: estimate new position based on current coordinates, speed and directio
     # We consider a simple fowarding movement of delta positions per unit time.
-    velocities = [20, 40, 60, 80, 100]
-    distancesFront = [0.5, 1.0, 1.5, 2.0, 2.5]
+    velocities = [0, 20, 40, 60, 80, 100]
+    distancesFront = [0, 0.5, 1.0, 1.5, 2.0, 2.5]
     distancesBack = [0.5, 1.0, 1.5, 2.0, 2.5]
     index = velocities.index(speed)
     x = coordinates['x']
