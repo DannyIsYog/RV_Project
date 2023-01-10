@@ -294,6 +294,12 @@ def main(argv):
         t.start()
         threads.append(t)
 
+        # Thread- car_controller: control the car movement relative to it's current destinations
+        t = Thread(target=car_controller, args=(node_id, start_flag, coordinates,
+                   obd_2_interface, movement_control_txd_queue, position_rxd_queue))
+        t.start()
+        threads.append(t)
+
         start_flag.set()
 
     except Exception as e:

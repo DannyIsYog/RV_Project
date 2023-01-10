@@ -115,7 +115,6 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
 
     enter_car(movement_control_txd_queue)
     turn_on_car(movement_control_txd_queue)
-    car_on = False
 
     while True:
         msg_rxd = my_system_rxd_queue.get()
@@ -252,14 +251,10 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
                         den_user_data = {'node': node, 'sender_node_type': node_type, 'receiver_node_type': type,
                                          'obu_name': obu_temp['name'], 'confirmation': confirmation, 'msg_type': 'booking'}
                         den_service_txd_queue.put(den_user_data)
-                        if (car_on == False):
-                            car_on = True
-
-                            dest = update_current_destination(
-                                au_temp['location']['x'])
-                            print('New destination:   ', dest)
-                            position_rxd_queue.put(dest)
-                            car_move_forward(movement_control_txd_queue)
+                        dest = update_current_destination(
+                            au_temp['location']['x'])
+                        print('New destination:   ', dest)
+                        position_rxd_queue.put(dest)
 
                 # RSU -> OBU: AU entered/left OBU (ACK)
                 if (msg_rxd['event']['sender_node_type'] == 'RSU' and (msg_rxd['event']['msg_type'] == 'entered' or msg_rxd['event']['msg_type'] == 'left')):

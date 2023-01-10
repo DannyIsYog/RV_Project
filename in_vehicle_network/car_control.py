@@ -5,6 +5,7 @@
 import time
 
 from numpy import block
+from application.self_driving_test import car_move_forward
 from in_vehicle_network.car_motor_functions import *
 from in_vehicle_network.location_functions import *
 
@@ -17,7 +18,6 @@ from in_vehicle_network.location_functions import *
 
 def update_location(node, start_flag, coordinates, obd_2_interface, dest, position_rxd_queue):
     gps_time = 0.5
-    last_location = 0
     if(node != '1'):
         return
     while not start_flag.isSet():
@@ -25,21 +25,8 @@ def update_location(node, start_flag, coordinates, obd_2_interface, dest, positi
     print('STATUS: Ready to start - THREAD: update_location - NODE: {}\n'.format(node), '\n')
 
     while True:
-        if(dest == {}):
-            dest = position_rxd_queue.get(block=False)
         time.sleep(gps_time)
         position_update(coordinates, obd_2_interface, gps_time)
-        #print('STATUS: New position update - THREAD: update_location - NODE: {}\n'.format(coordinates), '\n')
-        #print('dest: ', dest)
-        # chekc if dest is empty dictionary
-        if(dest == {}):
-            continue
-        if (float(last_location) <= float(dest['destination']) and float(coordinates['y']) >= float(dest['destination'])):
-            print(
-                'STATUS: Destination reached - THREAD: update_location - NODE: {}\n'.format(coordinates), '\n')
-            stop_vehicle(obd_2_interface)
-            dest = {}
-        last_location = int(coordinates['y'])
     return
 
 
@@ -121,4 +108,62 @@ def movement_control(node, start_flag, coordinates, obd_2_interface, movement_co
         set_vehicle_info(obd_2_interface, speed, direction, status)
         position_update(coordinates, obd_2_interface, TIME_INTERVAL)
         time.sleep(TIME_INTERVAL)
+    return
+
+
+def car_controller(node, start_flag, coordinates, obd_2_interface, movement_control_txd_queue, position_rxd_queue):
+    if(node != '1'):
+        return
+    while not start_flag.isSet():
+        time.sleep(1)
+    print('STATUS: Ready to start - THREAD: car_controller - NODE: {}\n'.format(node), '\n')
+    car_on = False
+    all_destinations = []
+    last_location = 0
+    while True:
+        if(all_destinations == []):
+            print("Waiting for new destination...")
+            new_dest = position_rxd_queue.get()
+        else:
+            new_dest = position_rxd_queue.get(block=False)
+
+        # check if dest is empty dictionary, if so ignore
+        if (new_dest != {}):
+            all_destinations.append(new_dest['destination'])
+            print('STATUS: New destination {} added - THREAD: car_controller - NODE: {}\n'.format(
+                new_dest['destination'], node), '\n')
+
+        if(all_destinations != [] and car_on == False):
+            print("Turning car on")
+            car_move_forward(movement_control_txd_queue)
+            car_on = True
+
+        # chekc if dest is empty dictionary
+        if(all_destinations == []):
+            continue
+        last_location = float(coordinates['y'])
+        print("CAR CONTROLLER")
+        print("last_location: ", last_location)
+        print("all_destinations: ", all_destinations)
+        print("coordinates: ", coordinates)
+        if (float(last_location) <= float(all_destinations[0]) and float(coordinates['y']) >= float(all_destinations[0])):
+            print(
+                'STATUS: Destination {} reached - THREAD: car_controller - NODE: {}\n'.format(all_destinations[0], node), '\n')
+            stop_vehicle(obd_2_interface)
+            print("STOPPED")
+            all_destinations.pop(0)
+            print("all_destinations: ", all_destinations)
+
+            # wait for passengers to get in
+            time.sleep(5)
+            print("all_destinations: ", all_destinations)
+            # if there are more destinations
+            if(all_destinations != []):
+                car_move_forward(movement_control_txd_queue)
+                print("FORWARD")
+            else:
+                car_on = False
+                print("Turning car off")
+                print("Waiting for new destination")
+        last_location = int(coordinates['y'])
     return
