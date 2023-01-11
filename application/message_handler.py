@@ -41,6 +41,18 @@ def trigger_event(node, node_type, au_info, obu_info, rsu_info):
             msg = {'node': node, 'sender_node_type': node_type, 'receiver_node_type': type,
                    'name': au_info['name'], 'num_passengers': au_info['num_passengers'], 'destination': au_info['destination'], 'location': au_info['location']}
             return msg
+        
+        if (event_type == 'n'):
+            # AU -> RSU: AU entered OBU
+            event_type2 = input('DEN message - AU entered OBU (y/n) >   ')
+            if (event_type2 == 'y'):
+                print('desliga LED')
+
+            if (event_type2 == 'n'):
+                event_type3 = input('DEN message - AU left OBU (y/n) >   ')
+                if (event_type3 == 'y'):
+                    print('liga LED')
+
 
     # Messages sent by OBU
     if node_type == "OBU":
