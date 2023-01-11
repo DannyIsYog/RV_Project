@@ -98,9 +98,6 @@ def application_rxd(node, node_type, start_flag, services_rxd_queue, my_system_r
 # -----------------------------------------------------------------------------------------
 def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_system_rxd_queue, den_service_txd_queue, movement_control_txd_queue, au_info, obu_info, rsu_info, dest, position_rxd_queue):
 
-    safety_emergency_distance = 20
-    safety_warning_distance = 50
-
     while not start_flag.isSet():
         time.sleep(1)
     print('STATUS: Ready to start - THREAD: my_system - NODE: {}'.format(node), '\n')
@@ -132,18 +129,6 @@ def my_system(node, node_type, start_flag, coordinates, obd_2_interface, my_syst
             obu_temp = update_obu_info(
                 obu_temp, msg_rxd['obu_name'], msg_rxd['obu_destination'], msg_rxd['obu_capacity'], msg_rxd['obu_free'])
             rsu_temp = update_rsu_info(rsu_temp['id'], obu_temp)
-
-            # if (nodes_distance < safety_emergency_distance):
-            #	print ('----------------STOP-------------------')
-            #	stop_car (movement_control_txd_queue)
-            #	print(coordinates)
-            # elif (nodes_distance < safety_warning_distance):
-            #	print ('----------------SLOW DOWN  ------------------------------')
-            #	car_move_slower(movement_control_txd_queue)
-            #	print(coordinates)
-        # if (msg_rxd == "MOVE"):
-            # car_test_drive (movement_control_txd_queue)
-            # print('STATUS: self-driving car - THREAD: my_system - NODE: {}'.format(node),' - MSG: {}'.format(msg_rxd),'\n')
 
         if msg_rxd['msg_type'] == 'DEN':
 

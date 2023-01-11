@@ -146,28 +146,21 @@ def car_controller(node, start_flag, coordinates, obd_2_interface, movement_cont
         if(all_destinations == []):
             continue
         last_location = float(coordinates['y'])
-        print("CAR CONTROLLER")
-        print("last_location: ", last_location)
-        print("all_destinations: ", all_destinations)
-        print("coordinates: ", coordinates)
         if (float(last_location) <= float(all_destinations[0]) and float(coordinates['y']) >= float(all_destinations[0])):
             print(
                 'STATUS: Destination {} reached - THREAD: car_controller - NODE: {}\n'.format(all_destinations[0], node), '\n')
             stop_vehicle(obd_2_interface)
-            print("STOPPED")
             all_destinations.pop(0)
-            print("all_destinations: ", all_destinations)
-
             # wait for passengers to get in
             time.sleep(5)
-            print("all_destinations: ", all_destinations)
             # if there are more destinations
             if(all_destinations != []):
                 car_move_forward(movement_control_txd_queue)
-                print("FORWARD")
+                print(
+                    'STATUS: Going to next stop - THREAD: car_controller - NODE: {}\n'.format(node), '\n')
             else:
                 car_on = False
-                print("Turning car off")
-                print("Waiting for new destination")
+                print(
+                    'STATUS: Final destination {} reached - THREAD: car_controller - NODE: {}\n'.format(all_destinations[0], node), '\n')
         last_location = int(coordinates['y'])
     return
