@@ -3,7 +3,7 @@
 # FUNCTIONS USED BY APPLICATION LAYER TO TRIGGER C-ITS MESSAGE GENERATION
 # ##########################################################################
 
-
+from in_vehicle_network.led_functions import *
 # ------------------------------------------------------------------------------------------------
 # trigger_ca -trigger the generation of CA messages
 #       (out) - time between ca message generation
@@ -46,12 +46,14 @@ def trigger_event(node, node_type, au_info, obu_info, rsu_info):
             # AU -> RSU: AU entered OBU
             event_type2 = input('DEN message - AU entered OBU (y/n) >   ')
             if (event_type2 == 'y'):
-                print('desliga LED')
+                print('LED: TURN OFF')
+                led_activation(False)
 
             if (event_type2 == 'n'):
                 event_type3 = input('DEN message - AU left OBU (y/n) >   ')
                 if (event_type3 == 'y'):
-                    print('liga LED')
+                    print('LED: TURN ON')
+                    led_activation(True)
 
 
     # Messages sent by OBU
