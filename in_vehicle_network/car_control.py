@@ -146,6 +146,8 @@ def car_controller(node, start_flag, coordinates, obd_2_interface, movement_cont
         if(all_destinations == []):
             continue
         last_location = float(coordinates['y'])
+        print("CAR CONTROLLER")
+
         if (float(last_location) <= float(all_destinations[0]) and float(coordinates['y']) >= float(all_destinations[0])):
             print(
                 'STATUS: Destination {} reached - THREAD: car_controller - NODE: {}\n'.format(all_destinations[0], node), '\n')
